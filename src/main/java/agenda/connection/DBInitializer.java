@@ -28,34 +28,57 @@ public class DBInitializer {
             Statement st = con.createStatement()
         ) {
             st.executeUpdate("""
+                CREATE TABLE IF NOT EXISTS ciudad(
+                    id_ciudad INT AUTO_INCREMENT PRIMARY KEY,
+                    nombre VARCHAR(50) NOT NULL,
+                    provincia VARCHAR(50),
+                    pais VARCHAR(50)
+                )
+            """);
+
+            st.executeUpdate("""
+                CREATE TABLE IF NOT EXISTS direccion(
+                    id_direccion INT AUTO_INCREMENT PRIMARY KEY,
+                    calle VARCHAR(25),
+                    numero INT,
+                    piso VARCHAR(25),
+                    depto VARCHAR(25),
+                    cp VARCHAR(25),
+                    id_ciudad INT NOT NULL,
+                    FOREIGN KEY(id_ciudad) REFERENCES ciudad(id_ciudad)
+                )
+            """);
+
+            st.executeUpdate("""
                 CREATE TABLE IF NOT EXISTS persona(
                     id_persona INT AUTO_INCREMENT PRIMARY KEY,
                     nombre VARCHAR(25),
                     apellido VARCHAR(25),
-                    telefono INT,
-                    email VARCHAR(25),
-                    id_direccion INT
+                    telefono VARCHAR(50),
+                    email VARCHAR(100),
+                    id_direccion INT,
+                    FOREIGN KEY (id_direccion) REFERENCES direccion(id_direccion)
                 )
             """);
 
             st.executeUpdate("""
                 CREATE TABLE IF NOT EXISTS empresa(
                     id_empresa INT AUTO_INCREMENT PRIMARY KEY,
-                    razon_social VARCHAR(50),
-                    telefono INT,
-                    id_direccion INT;
+                    razon_social VARCHAR(50) NOT NULL,
+                    telefono VARCHAR(50),
+                    id_direccion INT,
+                    FOREIGN KEY (id_direccion) REFERENCES direccion(id_direccion)
                 )
             """);
 
             st.executeUpdate("""
-                CREATE TABLE IF NOT EXISTS direccion(
-                    id_direccion INT AUTO_INCREMENTAL PRIMARY KEY,
-                    calle VARCHAR(25),
-                    numero INT,
-                    piso VARCHAR(25),
-                    depto VARCHAR(25),
-                    cp VARCHAR(25),
-                    id_ciudad INT
+                CREATE TABLE IF NOT EXISTS contacto_empresa(
+                    id_empresa INT NOT NULL,
+                    id_persona INT NOT NULL,
+                    cargo VARCHAR(50),
+                    PRIMARY KEY (id_empresa, id_persona),
+                    FOREIGN KEY (id_empresa) REFERENCES empresa(id_empresa),
+                    FOREIGN KEY (id_persona) REFERENCES persona(id_persona)
                 )
             """);
 
