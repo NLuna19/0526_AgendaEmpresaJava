@@ -8,6 +8,10 @@ public class Ciudad {
     private String provincia;
     private String pais;
 
+    public Ciudad(int idCiudad){
+        this.idCiudad = idCiudad;
+    }
+
     public Ciudad(String nombre, String provincia, String pais){
         nameValidator(nombre);
 
