@@ -1,9 +1,18 @@
 package agenda.presentation;
 
+import agenda.data.*;
+import agenda.domain.Ciudad;
+import agenda.domain.Direccion;
+import agenda.domain.Persona;
+
+import java.sql.SQLException;
+import java.util.Optional;
 import java.util.Scanner;
 
 public class AgendaEmpresaApp {
-    //public static ICiudadDAO cityDAO = new CiudadDAO();
+    public static ICiudadDAO cityDAO = new CiudadDAO();
+    public static IDireccionDAO addressDAO = new DireccionDAO();
+    public static IPersonaDAO peopleDAO = new PersonaDAO();
 
     private static final String MAIN_MENU = """
             --- Agenda Java---
@@ -85,21 +94,96 @@ public class AgendaEmpresaApp {
 
     // SUBMENUS
 
-    public static void personasMenu(Scanner console) {
+    public static void personasMenu(Scanner console) throws SQLException {
         boolean back = false;
         while (!back) {
             int option = showMenu(PERSONA_MENU, console);
             switch (option) {
-                case 1 -> System.out.println("\n[CREAR PERSONA]");
+                case 1 -> {
+                    System.out.println("\n[CREAR PERSONA]");
+                    createPersona(console);
+                }
                 case 2 -> System.out.println("\n[EDITAR PERSONA]");
                 case 3 -> System.out.println("\n[ELIMINAR PERSONA]");
                 case 4 -> System.out.println("\n[BUSCAR PERSONA]");
-                case 5 -> System.out.println("\n[LISTAR PERSONAS]");
+                case 5 -> getPersonaList();
                 case 0 -> back = true;
                 default -> System.out.println("\nOpción no reconocida.");
             }
+            if(option != 0) {
+                System.out.print("Presione cualquier tecla para continuar...\n");
+                console.nextLine();
+            }
+        }
+
+    }
+
+    // PERSONA
+    public static void createPersona(Scanner console) throws SQLException {
+        System.out.println("--- Agregar Persona ---");
+        System.out.println("-- Nueva persona --");
+        System.out.print("-- Nombre: ");
+        var _nombre = console.nextLine();
+        System.out.print("-- Apellido: ");
+        var _apellido = console.nextLine();
+        System.out.print("-- telefono: ");
+        var _telefono = console.nextLine();
+        System.out.print("-- email: ");
+        var _email = console.nextLine();
+        //DIRECCION
+        System.out.println("-- Direccion --");
+        System.out.print("-- calle: ");
+        var _calle = console.nextLine();
+        System.out.print("-- numero: ");
+        var _numero = Integer.parseInt(console.nextLine());
+        System.out.print("-- piso: ");
+        var _piso = console.nextLine();
+        System.out.print("-- depto: ");
+        var _depto = console.nextLine();
+        System.out.print("-- codigo postal: ");
+        var _cp = console.nextLine();
+        //CIUDAD
+        System.out.print("-- ciudad: ");
+        var _ciudad = console.nextLine();
+        System.out.print("-- provincia: ");
+        var _provincia = console.nextLine();
+        System.out.print("-- pais: ");
+        var _pais = console.nextLine();
+
+        Ciudad inputCity = new Ciudad(_ciudad, _provincia, _pais);
+        Ciudad newCity;
+        Optional<Ciudad> ciudadDB = cityDAO.findCity(inputCity);
+        if(ciudadDB.isPresent()) {
+            newCity = ciudadDB.get();
+        } else {
+            newCity = cityDAO.addCity(inputCity);
+        }
+
+        Direccion inputAddress = new Direccion(_calle,_numero,_piso,_depto,_cp,newCity);
+        Direccion newAddress;
+        Optional<Direccion> addressDB = addressDAO.findAddress(inputAddress);
+        if(addressDB.isPresent()) {
+            newAddress = addressDB.get();
+        } else {
+            newAddress = addressDAO.addAddress(inputAddress);
+        }
+
+        Persona newPerson = new Persona(_nombre, _apellido, _telefono, _email, newAddress);
+        if(peopleDAO.addPerson(newPerson)) {
+            System.out.println("Persona agregada exitosamente!!\n" + newPerson);
+        } else {
+            System.out.println("No se pudo agregar a la Persona.");
         }
     }
+
+    //5
+    public static void getPersonaList() throws SQLException {
+        System.out.println("--- Listado de Personas ---");
+        var people = peopleDAO.personList();
+        people.forEach(System.out::println);
+    }
+
+
     public static void empresasMenu(Scanner console) {
         boolean back = false;
         while (!back) {
@@ -113,6 +197,7 @@ public class AgendaEmpresaApp {
                 default -> System.out.println("\nOpción no reconocida.");
             }
         }
+
     }
 
     public static void contactosMenu(Scanner console) {

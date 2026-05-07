@@ -23,12 +23,14 @@ public class ContactoEmpresaDAO implements IContactoEmpresaDAO {
         Connection con = getDatabaseConnection();
         var sql = """
                 SELECT ce.cargo,
+                       
                        e.id_empresa, e.razon_social, e.telefono AS empresa_telefono,
                        de.id_direccion AS empresa_direccion_id, de.calle AS empresa_calle,
                        de.numero AS empresa_numero, de.piso AS empresa_piso, de.depto AS empresa_depto,
                        de.cp AS empresa_cp, ce_ciudad.id_ciudad AS empresa_ciudad_id,
                        ce_ciudad.nombre AS empresa_ciudad_nombre, ce_ciudad.provincia AS empresa_provincia,
                        ce_ciudad.pais AS empresa_pais,
+                       
                        p.id_persona, p.nombre, p.apellido, p.telefono AS persona_telefono, p.email,
                        dp.id_direccion AS persona_direccion_id, dp.calle AS persona_calle,
                        dp.numero AS persona_numero, dp.piso AS persona_piso, dp.depto AS persona_depto,

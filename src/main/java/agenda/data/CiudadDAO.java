@@ -3,12 +3,10 @@ package agenda.data;
 import agenda.domain.Ciudad;
 import static agenda.connection.DBConnection.getDatabaseConnection;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class CiudadDAO implements ICiudadDAO{
 
@@ -17,9 +15,9 @@ public class CiudadDAO implements ICiudadDAO{
         List<Ciudad> cities = new ArrayList<>();
         var sql = "SELECT * FROM ciudad ORDER BY id_ciudad";
         try (
-                Connection con = getDatabaseConnection();
-                PreparedStatement ps = con.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()
+            Connection con = getDatabaseConnection();
+            PreparedStatement ps = con.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery()
         ) {
             while(rs.next()){
                 var city = new Ciudad(
@@ -59,22 +57,36 @@ public class CiudadDAO implements ICiudadDAO{
     }
 
     @Override
-    public boolean addCity(Ciudad ciudad) throws SQLException {
-        String sql = "INSERT INTO ciudad(nombre, provincia, pais) "
-                + "VALUES(?, ?, ?)";
+    public Ciudad addCity(Ciudad ciudad) throws SQLException {
+        String sql = """
+            INSERT INTO ciudad(nombre, provincia, pais)
+                VALUES(?, ?, ?)
+        """;
+
         try (
-                Connection con = getDatabaseConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
+            Connection con = getDatabaseConnection();
+            PreparedStatement ps = con.prepareStatement(
+                sql,
+                Statement.RETURN_GENERATED_KEYS
+            )
         ) {
             ps.setString(1, ciudad.getNombre());
             ps.setString(2, ciudad.getProvincia());
             ps.setString(3, ciudad.getPais());
             ps.executeUpdate();
-            return true;
-        }catch (Exception e) {
-            System.out.println("Error al agregar ciudad: "+ e.getMessage());
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    int generatedId = rs.getInt(1);
+                    ciudad.setIdCiudad(generatedId);
+                }
+            }
+            return ciudad;
+
+        } catch (SQLException e) {
+            System.out.println("Error al agregar ciudad: " + e.getMessage());
+            throw e;
         }
-        return false;
     }
 
     @Override
@@ -82,8 +94,8 @@ public class CiudadDAO implements ICiudadDAO{
         var sql = "UPDATE ciudad SET nombre=?, provincia=?, pais=? "+
                 " WHERE id_ciudad=?";
         try (
-                Connection con = getDatabaseConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
+            Connection con = getDatabaseConnection();
+            PreparedStatement ps = con.prepareStatement(sql)
         ) {
             ps.setString(1, ciudad.getNombre());
             ps.setString(2, ciudad.getProvincia());
@@ -102,8 +114,8 @@ public class CiudadDAO implements ICiudadDAO{
         String sql = "DELETE FROM ciudad WHERE id_ciudad = ?";
 
         try (
-                Connection con = getDatabaseConnection();
-                PreparedStatement ps = con.prepareStatement(sql)
+            Connection con = getDatabaseConnection();
+            PreparedStatement ps = con.prepareStatement(sql)
         ) {
             ps.setInt(1, idCiudad);
             ps.executeUpdate();
@@ -112,6 +124,39 @@ public class CiudadDAO implements ICiudadDAO{
             System.out.println("Error al eliminar ciudad: "+ e.getMessage());
         }
         return false;
+    }
+
+    @Override
+    public Optional<Ciudad> findCity(Ciudad ciudad) throws SQLException {
+        String sql = """ 
+            SELECT * FROM ciudad 
+                     WHERE LOWER(nombre) = LOWER(?) 
+                       AND LOWER(provincia) = LOWER(?)
+                        AND LOWER (pais) = LOWER(?) 
+            """;
+        try (
+            Connection con = getDatabaseConnection();
+            PreparedStatement ps = con.prepareStatement(sql)
+        ) {
+            ps.setString(1, ciudad.getNombre());
+            ps.setString(2, ciudad.getProvincia());
+            ps.setString(3, ciudad.getPais());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Ciudad _ciudad = new Ciudad(
+                        rs.getInt("id_ciudad"),
+                        rs.getString("nombre"),
+                        rs.getString("provincia"),
+                        rs.getString("pais")
+                    );
+                    return Optional.of(_ciudad);
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error al buscar ciudad: " + e.getMessage());
+            throw e;
+        }
+        return Optional.empty();
     }
 
     private ResultSet prepareAndExecute(PreparedStatement ps, int idCiudad) throws SQLException {
